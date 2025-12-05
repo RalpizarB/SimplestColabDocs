@@ -6,34 +6,181 @@
 // Configuration constants
 const SEARCH_CONTEXT_CHARS = 40;
 const MAX_MATCHES_PER_DOCUMENT = 5;
+const MAX_RECENTLY_READ = 50;
 
-// Document structure - will be loaded from docs folder
-const docsStructure = {
-    'Getting Started': {
-        'Document.md': 'docs/Document.md',
-        'Linking.md': 'docs/Linking.md'
-    },
-    'Advanced': {
-        'SubfolderTest.md': 'docs/Advanced/SubfolderTest.md',
-        'Deep': {
-            'DeepLink.md': 'docs/Advanced/Deep/DeepLink.md'
-        }
-    }
-};
+// Document structure - loaded from docs.json
+let docsStructure = {};
 
 // State
 let currentDoc = null;
 let currentDocPath = null;
 let allDocs = {};
 let searchQuery = '';
+let currentTab = 'docs';
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    initTree();
-    initSearch();
-    loadDocsIndex();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        initTheme();
+        initTabs();
+        initSearch();
+        
+        // Load document structure from docs.json
+        await loadDocsStructure();
+        
+        // Initialize tree after structure is loaded
+        initTree();
+        
+        // Pre-load documents for search
+        await loadDocsIndex();
+        
+        // Check for URL hash to restore state on refresh
+        restoreFromHash();
+        
+        // Listen for hash changes (back/forward browser buttons)
+        window.addEventListener('hashchange', restoreFromHash);
+    } catch (error) {
+        console.error('Error initializing application:', error);
+        // Show error message to user
+        const contentEl = document.getElementById('doc-content');
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <h1>Error Loading Application</h1>
+                <p>There was an error loading the documentation. Please try refreshing the page.</p>
+                <p>Error: ${error.message}</p>
+            `;
+        }
+    }
 });
+
+// Load document structure from docs.json
+async function loadDocsStructure() {
+    try {
+        const response = await fetch('docs.json');
+        if (response.ok) {
+            docsStructure = await response.json();
+        } else {
+            console.error('Could not load docs.json, using empty structure');
+            docsStructure = {};
+        }
+    } catch (e) {
+        console.error('Error loading docs.json:', e);
+        docsStructure = {};
+    }
+}
+
+// URL Hash Management for page refresh persistence
+function updateHash(path) {
+    if (path) {
+        window.location.hash = encodeURIComponent(path);
+    } else {
+        history.pushState('', document.title, window.location.pathname + window.location.search);
+    }
+}
+
+function restoreFromHash() {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+        const path = decodeURIComponent(hash);
+        // Check if it's a valid document path
+        if (allDocs[path] || isValidDocPath(path)) {
+            loadDocument(path);
+            // Update tree active state
+            document.querySelectorAll('.tree-file').forEach(f => {
+                f.classList.remove('active');
+                if (f.getAttribute('data-path') === path) {
+                    f.classList.add('active');
+                    // Expand parent folders
+                    expandParentFolders(f);
+                }
+            });
+        }
+    }
+}
+
+function isValidDocPath(path) {
+    // Check if path exists in docsStructure
+    return findPathInStructure(docsStructure, path);
+}
+
+function findPathInStructure(structure, path) {
+    for (const value of Object.values(structure)) {
+        if (typeof value === 'string' && value === path) {
+            return true;
+        } else if (typeof value === 'object') {
+            if (findPathInStructure(value, path)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function expandParentFolders(fileElement) {
+    let parent = fileElement.closest('.tree-children');
+    while (parent) {
+        const folder = parent.previousElementSibling;
+        if (folder && folder.classList.contains('tree-folder')) {
+            folder.classList.add('open');
+        }
+        parent = parent.parentElement.closest('.tree-children');
+    }
+}
+
+// Recently Read Management
+function getRecentlyRead() {
+    const stored = localStorage.getItem('recentlyRead');
+    return stored ? JSON.parse(stored) : [];
+}
+
+function addToRecentlyRead(path) {
+    let recentlyRead = getRecentlyRead();
+    
+    // Remove if already exists
+    recentlyRead = recentlyRead.filter(item => item.path !== path);
+    
+    // Add to beginning with timestamp
+    recentlyRead.unshift({
+        path: path,
+        timestamp: Date.now()
+    });
+    
+    // Keep only MAX_RECENTLY_READ items
+    recentlyRead = recentlyRead.slice(0, MAX_RECENTLY_READ);
+    
+    localStorage.setItem('recentlyRead', JSON.stringify(recentlyRead));
+}
+
+// Tab Management
+function initTabs() {
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
+}
+
+function switchTab(tabName) {
+    currentTab = tabName;
+    
+    // Update tab active state
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+    });
+    
+    // Show/hide content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('hidden', content.id !== `tab-${tabName}`);
+    });
+    
+    // Populate tab content
+    if (tabName === 'recent') {
+        displayRecentArticles();
+    } else if (tabName === 'history') {
+        displayRecentlyRead();
+    }
+}
 
 // Theme Management
 function initTheme() {
@@ -127,6 +274,12 @@ async function loadDocument(path, highlightQuery = '') {
         contentEl.innerHTML = html;
         currentDoc = markdown;
         currentDocPath = path;
+        
+        // Update URL hash for page refresh persistence
+        updateHash(path);
+        
+        // Track in recently read
+        addToRecentlyRead(path);
         
         // Store for search
         allDocs[path] = markdown;
@@ -596,4 +749,125 @@ function highlightInContext(context, query) {
     const escaped = escapeHtml(context);
     const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
     return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+}
+
+// Display Recent Articles (all documents sorted by name)
+function displayRecentArticles() {
+    const container = document.getElementById('tab-recent');
+    const articles = getAllDocPaths();
+    
+    if (articles.length === 0) {
+        container.innerHTML = '<p class="tab-empty">No articles found.</p>';
+        return;
+    }
+    
+    let html = '<div class="article-list">';
+    
+    for (const article of articles) {
+        const fileName = article.path.split('/').pop().replace('.md', '');
+        const folder = article.path.split('/').slice(0, -1).join('/');
+        
+        html += `
+            <a href="#" class="article-item" data-path="${article.path}">
+                <span class="article-name">${fileName}</span>
+                <span class="article-path">${folder}</span>
+            </a>
+        `;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Add click handlers
+    container.querySelectorAll('.article-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const path = item.getAttribute('data-path');
+            loadDocument(path);
+            
+            // Update tree active state
+            document.querySelectorAll('.tree-file').forEach(f => {
+                f.classList.remove('active');
+                if (f.getAttribute('data-path') === path) {
+                    f.classList.add('active');
+                    expandParentFolders(f);
+                }
+            });
+        });
+    });
+}
+
+// Get all document paths from structure
+function getAllDocPaths() {
+    const paths = [];
+    collectPaths(docsStructure, paths);
+    return paths.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function collectPaths(structure, paths) {
+    for (const value of Object.values(structure)) {
+        if (typeof value === 'string') {
+            paths.push({ path: value });
+        } else {
+            collectPaths(value, paths);
+        }
+    }
+}
+
+// Display Recently Read documents
+function displayRecentlyRead() {
+    const container = document.getElementById('tab-history');
+    const recentlyRead = getRecentlyRead();
+    
+    if (recentlyRead.length === 0) {
+        container.innerHTML = '<p class="tab-empty">No recently read documents.</p>';
+        return;
+    }
+    
+    let html = '<div class="article-list">';
+    
+    for (const item of recentlyRead) {
+        const fileName = item.path.split('/').pop().replace('.md', '');
+        const timeAgo = getTimeAgo(item.timestamp);
+        
+        html += `
+            <a href="#" class="article-item" data-path="${item.path}">
+                <span class="article-name">${fileName}</span>
+                <span class="article-time">${timeAgo}</span>
+            </a>
+        `;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Add click handlers
+    container.querySelectorAll('.article-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const path = item.getAttribute('data-path');
+            loadDocument(path);
+            
+            // Update tree active state
+            document.querySelectorAll('.tree-file').forEach(f => {
+                f.classList.remove('active');
+                if (f.getAttribute('data-path') === path) {
+                    f.classList.add('active');
+                    expandParentFolders(f);
+                }
+            });
+        });
+    });
+}
+
+// Get time ago string
+function getTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+    if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+    
+    return new Date(timestamp).toLocaleDateString();
 }

@@ -8,8 +8,31 @@ Philosophy:
 - Search Bar to search all text
 Tech stack:
 HTML - CSS - Javascript
-To add a document:
-Add it in the docs folder in the subfolder you like if it applies. If your doc contains images, place them in a folder with the same name as your doc (without .md) 
+
+## To add a document:
+
+1. Add your `.md` file in the `docs` folder (or a subfolder)
+2. If your doc contains images, place them in a folder with the same name as your doc (without .md)
+3. **Update `docs.json`** to include your new document in the structure:
+
+```json
+{
+    "Category Name": {
+        "YourDocument.md": "docs/YourDocument.md"
+    }
+}
+```
+
+For nested folders:
+```json
+{
+    "Category": {
+        "Subcategory": {
+            "Document.md": "docs/Category/Subcategory/Document.md"
+        }
+    }
+}
+```
 
 <img width="32" height="32" alt="the guy" src="https://github.com/user-attachments/assets/1bcb93fb-c861-4457-ad31-9b1a5b897842" />
 

@@ -1,0 +1,12 @@
+{
+    "Getting Started": {
+        "Document.md": "docs/Document.md",
+        "Linking.md": "docs/Linking.md"
+    },
+    "Advanced": {
+        "SubfolderTest.md": "docs/Advanced/SubfolderTest.md",
+        "Deep": {
+            "DeepLink.md": "docs/Advanced/Deep/DeepLink.md"
+        }
+    }
+}

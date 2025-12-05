@@ -32,9 +32,22 @@
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="Search docs...">
             </div>
-            <nav id="doc-tree" class="doc-tree">
-                <!-- Tree structure will be populated by JavaScript -->
-            </nav>
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="docs">Documents</button>
+                <button class="sidebar-tab" data-tab="recent">All Articles</button>
+                <button class="sidebar-tab" data-tab="history">Recently Read</button>
+            </div>
+            <div class="tab-content" id="tab-docs">
+                <nav id="doc-tree" class="doc-tree">
+                    <!-- Tree structure will be populated by JavaScript -->
+                </nav>
+            </div>
+            <div class="tab-content hidden" id="tab-recent">
+                <!-- All articles will be populated by JavaScript -->
+            </div>
+            <div class="tab-content hidden" id="tab-history">
+                <!-- Recently read will be populated by JavaScript -->
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -53,6 +66,11 @@
             </article>
         </main>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 SimplestColabDocs. All rights reserved.</p>
+    </footer>
 
     <script src="app.js"></script>
 </body>
