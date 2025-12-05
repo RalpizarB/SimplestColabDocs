@@ -4,6 +4,8 @@ Philosophy:
 - Tree like Structure, to allow themes and subthemes
 - Most Markdown Support Including images, code blocks, tables and diagrams
 - Colaboration throught Git Pull Requests: A new document should be uploaded in the repository as .md and it will be reflected in the site
+- Both Light Theme and Dark Theme
+- Search Bar to search all text
 Tech stack:
 HTML - CSS - Javascript
 
