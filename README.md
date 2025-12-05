@@ -8,6 +8,8 @@ Philosophy:
 - Search Bar to search all text
 Tech stack:
 HTML - CSS - Javascript
+To add a document:
+Add it in the docs folder in the subfolder you like if it applies. If your doc contains images, place them in a folder with the same name as your doc (without .md) 
 
 <img width="32" height="32" alt="the guy" src="https://github.com/user-attachments/assets/1bcb93fb-c861-4457-ad31-9b1a5b897842" />
 
