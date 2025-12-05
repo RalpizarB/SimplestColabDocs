@@ -1,13 +1,15 @@
 {
-    "Getting Started": {
-        "Document.md": {
-            "path": "docs/Document.md",
-            "date": "2025-12-05"
-        },
-        "Linking.md": {
-            "path": "docs/Linking.md",
-            "date": "2025-12-05"
-        }
+    "Document.md": {
+        "path": "docs/Document.md",
+        "date": "2025-12-05"
+    },
+    "Linking.md": {
+        "path": "docs/Linking.md",
+        "date": "2025-12-05"
+    },
+    "Test.md": {
+        "path": "docs/Test.md",
+        "date": "2025-12-05"
     },
     "Advanced": {
         "SubfolderTest.md": {
