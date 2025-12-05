@@ -11,6 +11,12 @@
         "path": "docs/Test.md",
         "date": "2025-12-05"
     },
+    "Getting Started": {
+        "Welcome.md": {
+            "path": "docs/Getting Started/Welcome.md",
+            "date": "2025-12-05"
+        }
+    },
     "Advanced": {
         "SubfolderTest.md": {
             "path": "docs/Advanced/SubfolderTest.md",
