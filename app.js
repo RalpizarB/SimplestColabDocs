@@ -233,9 +233,13 @@ function buildTree(structure, level = 0) {
     let html = '';
     
     for (const [name, value] of Object.entries(structure)) {
-        if (typeof value === 'string') {
-            // It's a file
-            html += `<a class="tree-file" href="#" data-path="${value}">${name.replace('.md', '')}</a>`;
+        // Check if it's a file entry (has 'path' property)
+        if (value && typeof value === 'object' && value.path) {
+            // It's a file with path and date
+            html += `<a class="tree-file" href="#" data-path="${value.path}" data-date="${value.date || '2025-12-01'}">${name.replace('.md', '')}</a>`;
+        } else if (typeof value === 'string') {
+            // Legacy format - just a path string
+            html += `<a class="tree-file" href="#" data-path="${value}" data-date="2025-12-01">${name.replace('.md', '')}</a>`;
         } else {
             // It's a folder
             html += `
@@ -344,8 +348,19 @@ async function loadDocsIndex() {
 // Recursively load documents from nested structure
 async function loadDocsFromStructure(structure) {
     for (const value of Object.values(structure)) {
-        if (typeof value === 'string') {
-            // It's a file path
+        // Check if it's a file entry (has 'path' property)
+        if (value && typeof value === 'object' && value.path) {
+            // It's a file with path and date
+            try {
+                const response = await fetch(value.path);
+                if (response.ok) {
+                    allDocs[value.path] = await response.text();
+                }
+            } catch (e) {
+                console.log('Could not preload:', value.path);
+            }
+        } else if (typeof value === 'string') {
+            // Legacy format - just a path string
             try {
                 const response = await fetch(value);
                 if (response.ok) {
@@ -354,7 +369,7 @@ async function loadDocsFromStructure(structure) {
             } catch (e) {
                 console.log('Could not preload:', value);
             }
-        } else {
+        } else if (value && typeof value === 'object') {
             // It's a nested structure, recurse
             await loadDocsFromStructure(value);
         }
@@ -751,7 +766,7 @@ function highlightInContext(context, query) {
     return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 }
 
-// Display Recent Articles (all documents sorted by name)
+// Display Recent Articles (all documents sorted by date, most recent first)
 function displayRecentArticles() {
     const container = document.getElementById('tab-recent');
     const articles = getAllDocPaths();
@@ -766,11 +781,15 @@ function displayRecentArticles() {
     for (const article of articles) {
         const fileName = article.path.split('/').pop().replace('.md', '');
         const folder = article.path.split('/').slice(0, -1).join('/');
+        const dateStr = formatDate(article.date);
         
         html += `
             <a href="#" class="article-item" data-path="${article.path}">
                 <span class="article-name">${fileName}</span>
-                <span class="article-path">${folder}</span>
+                <span class="article-meta">
+                    <span class="article-path">${folder}</span>
+                    <span class="article-date">${dateStr}</span>
+                </span>
             </a>
         `;
     }
@@ -797,18 +816,46 @@ function displayRecentArticles() {
     });
 }
 
+// Format date for display
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    } catch (e) {
+        return dateStr;
+    }
+}
+
 // Get all document paths from structure
 function getAllDocPaths() {
     const paths = [];
     collectPaths(docsStructure, paths);
-    return paths.sort((a, b) => a.path.localeCompare(b.path));
+    // Sort by date (most recent first)
+    return paths.sort((a, b) => {
+        const dateA = a.date || '2025-12-01';
+        const dateB = b.date || '2025-12-01';
+        return dateB.localeCompare(dateA); // Descending order (most recent first)
+    });
 }
 
 function collectPaths(structure, paths) {
     for (const value of Object.values(structure)) {
-        if (typeof value === 'string') {
-            paths.push({ path: value });
-        } else {
+        // Check if it's a file entry (has 'path' property)
+        if (value && typeof value === 'object' && value.path) {
+            paths.push({ 
+                path: value.path, 
+                date: value.date || '2025-12-01'
+            });
+        } else if (typeof value === 'string') {
+            // Legacy format - just a path string
+            paths.push({ path: value, date: '2025-12-01' });
+        } else if (value && typeof value === 'object') {
+            // It's a nested structure
             collectPaths(value, paths);
         }
     }

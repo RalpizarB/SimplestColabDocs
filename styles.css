@@ -196,8 +196,15 @@ body {
     font-size: 0.9rem;
 }
 
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
 .article-path,
-.article-time {
+.article-time,
+.article-date {
     font-size: 0.75rem;
     color: var(--text-secondary);
 }
