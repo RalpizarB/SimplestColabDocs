@@ -16,7 +16,7 @@ Links are relative to the current document location:
 
 - `[Same Folder](Document.md)` - Links to a file in the same folder
 - `[Subfolder](Advanced/SubfolderTest.md)` - Links to a file in a subfolder
-- `[Up and Over](../other-folder/Doc.md)` - Navigate up then into another folder
+
 
 ## Examples
 
