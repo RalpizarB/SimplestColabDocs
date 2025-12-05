@@ -19,6 +19,10 @@ You can create [links](https://github.com) like this: `[text](url)`
 
 Images work similarly: `![alt text](image-url)`
 
+Here is a local image example:
+
+![Screenshot Example](../Captura de pantalla 2023-12-04 025316.png)
+
 ### Code
 
 Inline code: `const greeting = "Hello World";`
@@ -67,6 +71,14 @@ Use `---` to create a horizontal rule:
 
 ---
 
+## Internal Links
+
+You can link to other documents in this documentation:
+
+- [Learn about Linking](Linking.md)
+- [See Subfolder Test](Advanced/SubfolderTest.md)
+- [Deep Link Example](Advanced/Deep/DeepLink.md)
+
 ## How to Contribute
 
 1. Fork this repository
@@ -76,8 +88,8 @@ Use `---` to create a horizontal rule:
 
 ## Theme Support
 
-Click the 🌙/☀️ button in the sidebar to toggle between light and dark themes!
+Click the theme toggle button in the sidebar to switch between light and dark themes.
 
 ---
 
-*Happy documenting!* 📝
+*Happy documenting!*

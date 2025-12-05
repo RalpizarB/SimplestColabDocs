@@ -3,16 +3,29 @@
  * No external libraries - Pure JavaScript
  */
 
+// Configuration constants
+const SEARCH_CONTEXT_CHARS = 40;
+const MAX_MATCHES_PER_DOCUMENT = 5;
+
 // Document structure - will be loaded from docs folder
 const docsStructure = {
     'Getting Started': {
-        'Document.md': 'docs/Document.md'
+        'Document.md': 'docs/Document.md',
+        'Linking.md': 'docs/Linking.md'
+    },
+    'Advanced': {
+        'SubfolderTest.md': 'docs/Advanced/SubfolderTest.md',
+        'Deep': {
+            'DeepLink.md': 'docs/Advanced/Deep/DeepLink.md'
+        }
     }
 };
 
 // State
 let currentDoc = null;
+let currentDocPath = null;
 let allDocs = {};
+let searchQuery = '';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,18 +42,15 @@ function initTheme() {
     
     if (savedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
-        themeToggle.textContent = '☀️';
     }
     
     themeToggle.addEventListener('click', () => {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         if (isDark) {
             document.documentElement.removeAttribute('data-theme');
-            themeToggle.textContent = '🌙';
             localStorage.setItem('theme', 'light');
         } else {
             document.documentElement.setAttribute('data-theme', 'dark');
-            themeToggle.textContent = '☀️';
             localStorage.setItem('theme', 'dark');
         }
     });
@@ -78,14 +88,14 @@ function buildTree(structure, level = 0) {
     for (const [name, value] of Object.entries(structure)) {
         if (typeof value === 'string') {
             // It's a file
-            html += `<a class="tree-file" href="#" data-path="${value}">📄 ${name.replace('.md', '')}</a>`;
+            html += `<a class="tree-file" href="#" data-path="${value}">${name.replace('.md', '')}</a>`;
         } else {
             // It's a folder
             html += `
                 <div class="tree-item">
                     <div class="tree-folder">
-                        <span class="tree-folder-icon">▶</span>
-                        📁 ${name}
+                        <span class="tree-folder-icon"></span>
+                        ${name}
                     </div>
                     <div class="tree-children">
                         ${buildTree(value, level + 1)}
@@ -99,7 +109,7 @@ function buildTree(structure, level = 0) {
 }
 
 // Document Loading
-async function loadDocument(path) {
+async function loadDocument(path, highlightQuery = '') {
     const contentEl = document.getElementById('doc-content');
     
     try {
@@ -107,12 +117,30 @@ async function loadDocument(path) {
         if (!response.ok) throw new Error('Document not found');
         
         const markdown = await response.text();
-        const html = parseMarkdown(markdown);
+        let html = parseMarkdown(markdown, path);
+        
+        // Apply search highlighting if query exists
+        if (highlightQuery) {
+            html = highlightSearchTerm(html, highlightQuery);
+        }
+        
         contentEl.innerHTML = html;
-        currentDoc = path;
+        currentDoc = markdown;
+        currentDocPath = path;
         
         // Store for search
         allDocs[path] = markdown;
+        
+        // Add click handlers for internal links
+        setupInternalLinks();
+        
+        // Scroll to first highlight if searching
+        if (highlightQuery) {
+            const firstHighlight = contentEl.querySelector('.search-highlight');
+            if (firstHighlight) {
+                firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
     } catch (error) {
         contentEl.innerHTML = `
             <h1>Error Loading Document</h1>
@@ -122,25 +150,66 @@ async function loadDocument(path) {
     }
 }
 
+// Setup click handlers for internal markdown links
+function setupInternalLinks() {
+    document.querySelectorAll('#doc-content a[data-internal="true"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            loadDocument(href, searchQuery);
+            
+            // Update tree active state
+            document.querySelectorAll('.tree-file').forEach(f => {
+                if (f.getAttribute('data-path') === href) {
+                    document.querySelectorAll('.tree-file').forEach(file => file.classList.remove('active'));
+                    f.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+// Highlight search terms in HTML content
+function highlightSearchTerm(html, query) {
+    if (!query || query.length < 2) return html;
+    
+    // Don't highlight inside HTML tags
+    const regex = new RegExp(`(>[^<]*)(${escapeRegex(query)})([^<]*<)`, 'gi');
+    return html.replace(regex, '$1<mark class="search-highlight">$2</mark>$3');
+}
+
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Load docs index by scanning the docs folder structure
 async function loadDocsIndex() {
     // Pre-load all known documents for search functionality
-    for (const category of Object.values(docsStructure)) {
-        for (const path of Object.values(category)) {
+    await loadDocsFromStructure(docsStructure);
+}
+
+// Recursively load documents from nested structure
+async function loadDocsFromStructure(structure) {
+    for (const value of Object.values(structure)) {
+        if (typeof value === 'string') {
+            // It's a file path
             try {
-                const response = await fetch(path);
+                const response = await fetch(value);
                 if (response.ok) {
-                    allDocs[path] = await response.text();
+                    allDocs[value] = await response.text();
                 }
             } catch (e) {
-                console.log('Could not preload:', path);
+                console.log('Could not preload:', value);
             }
+        } else {
+            // It's a nested structure, recurse
+            await loadDocsFromStructure(value);
         }
     }
 }
 
 // Simple Markdown Parser (No external libraries)
-function parseMarkdown(markdown) {
+function parseMarkdown(markdown, currentPath = '') {
     let html = markdown;
     
     // Escape HTML to prevent XSS
@@ -173,11 +242,28 @@ function parseMarkdown(markdown) {
     // Strikethrough
     html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
     
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Get current directory for relative paths
+    const currentDir = currentPath ? currentPath.substring(0, currentPath.lastIndexOf('/') + 1) : '';
     
-    // Images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+    // Images - handle relative paths
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
+        // If it's a relative path (not http/https), resolve it
+        if (!src.startsWith('http://') && !src.startsWith('https://')) {
+            src = resolvePath(currentDir, src);
+        }
+        return `<img src="${src}" alt="${alt}">`;
+    });
+    
+    // Links - handle internal .md links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, href) => {
+        // Check if it's an internal markdown link
+        if (href.endsWith('.md')) {
+            const resolvedPath = resolvePath(currentDir, href);
+            return `<a href="${resolvedPath}" data-internal="true">${text}</a>`;
+        }
+        // External link
+        return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+    });
     
     // Blockquotes
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
@@ -217,9 +303,34 @@ function parseMarkdown(markdown) {
 }
 
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Resolve relative paths (handles ../ and ./)
+function resolvePath(basePath, relativePath) {
+    // If path starts with docs/, it's already absolute
+    if (relativePath.startsWith('docs/')) {
+        return relativePath;
+    }
+    
+    // Combine base and relative
+    const parts = (basePath + relativePath).split('/');
+    const result = [];
+    
+    for (const part of parts) {
+        if (part === '..') {
+            result.pop();
+        } else if (part !== '.' && part !== '') {
+            result.push(part);
+        }
+    }
+    
+    return result.join('/');
 }
 
 // Wrap consecutive list items in ul/ol tags
@@ -308,6 +419,7 @@ function initSearch() {
     
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
+        searchQuery = query;
         
         if (query.length < 2) {
             // Reset tree visibility using CSS classes
@@ -317,6 +429,14 @@ function initSearch() {
             document.querySelectorAll('.tree-item').forEach(item => {
                 item.classList.remove('hidden');
             });
+            // Clear search results from main area if showing search
+            const contentEl = document.getElementById('doc-content');
+            if (contentEl.querySelector('.search-results')) {
+                contentEl.innerHTML = `
+                    <h1>Welcome to SimplestColabDocs</h1>
+                    <p>Select a document from the sidebar to get started.</p>
+                `;
+            }
             return;
         }
         
@@ -325,21 +445,28 @@ function initSearch() {
 }
 
 function searchDocs(query) {
-    // Search through loaded documents
+    // Search through loaded documents and collect results with context
     const results = [];
     
     for (const [path, content] of Object.entries(allDocs)) {
-        if (content.toLowerCase().includes(query)) {
-            results.push(path);
+        const lowerContent = content.toLowerCase();
+        if (lowerContent.includes(query)) {
+            // Find matches with context
+            const matches = findMatchesWithContext(content, query);
+            const fileName = path.split('/').pop().replace('.md', '');
+            results.push({ path, fileName, matches });
         }
     }
     
-    // Also search through tree file names
+    // Display results in main content area
+    displaySearchResults(results, query);
+    
+    // Also update tree visibility
     document.querySelectorAll('.tree-file').forEach(file => {
-        const fileName = file.textContent.toLowerCase();
         const path = file.getAttribute('data-path');
+        const hasMatch = results.some(r => r.path === path);
         
-        if (fileName.includes(query) || results.includes(path)) {
+        if (hasMatch) {
             file.classList.remove('hidden');
             // Ensure parent folder is visible and open
             const parent = file.closest('.tree-children');
@@ -355,7 +482,7 @@ function searchDocs(query) {
         }
     });
     
-    // Hide empty folders - check for visible files using class
+    // Hide empty folders
     document.querySelectorAll('.tree-item').forEach(item => {
         const allFiles = item.querySelectorAll('.tree-file');
         const hiddenFiles = item.querySelectorAll('.tree-file.hidden');
@@ -365,4 +492,108 @@ function searchDocs(query) {
             item.classList.remove('hidden');
         }
     });
+}
+
+function findMatchesWithContext(content, query) {
+    const matches = [];
+    const lines = content.split('\n');
+    const lowerQuery = query.toLowerCase();
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const lowerLine = line.toLowerCase();
+        let index = lowerLine.indexOf(lowerQuery);
+        
+        while (index !== -1) {
+            // Get context around the match
+            const start = Math.max(0, index - SEARCH_CONTEXT_CHARS);
+            const end = Math.min(line.length, index + query.length + SEARCH_CONTEXT_CHARS);
+            let context = line.substring(start, end);
+            
+            if (start > 0) context = '...' + context;
+            if (end < line.length) context = context + '...';
+            
+            matches.push({
+                lineNumber: i + 1,
+                context: context,
+                matchStart: start > 0 ? index - start + 3 : index,
+                matchLength: query.length
+            });
+            
+            index = lowerLine.indexOf(lowerQuery, index + 1);
+        }
+    }
+    
+    return matches.slice(0, MAX_MATCHES_PER_DOCUMENT);
+}
+
+function displaySearchResults(results, query) {
+    const contentEl = document.getElementById('doc-content');
+    
+    if (results.length === 0) {
+        contentEl.innerHTML = `
+            <div class="search-results">
+                <h1>Search Results</h1>
+                <p class="no-results">No results found for "<strong>${escapeHtml(query)}</strong>"</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="search-results">
+            <h1>Search Results</h1>
+            <p class="results-count">Found ${results.reduce((sum, r) => sum + r.matches.length, 0)} matches in ${results.length} document(s) for "<strong>${escapeHtml(query)}</strong>"</p>
+    `;
+    
+    for (const result of results) {
+        html += `
+            <div class="search-result-item">
+                <h3 class="result-title">
+                    <a href="#" data-path="${result.path}" class="result-link">${result.fileName}</a>
+                </h3>
+                <div class="result-matches">
+        `;
+        
+        for (const match of result.matches) {
+            const highlightedContext = highlightInContext(match.context, query);
+            html += `
+                <div class="result-match">
+                    <span class="line-number">Line ${match.lineNumber}:</span>
+                    <span class="match-context">${highlightedContext}</span>
+                </div>
+            `;
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    contentEl.innerHTML = html;
+    
+    // Add click handlers for result links
+    contentEl.querySelectorAll('.result-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const path = link.getAttribute('data-path');
+            loadDocument(path, query);
+            
+            // Update tree active state
+            document.querySelectorAll('.tree-file').forEach(f => {
+                f.classList.remove('active');
+                if (f.getAttribute('data-path') === path) {
+                    f.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
+function highlightInContext(context, query) {
+    const escaped = escapeHtml(context);
+    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+    return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 }
