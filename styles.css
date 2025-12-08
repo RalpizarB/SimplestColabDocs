@@ -74,6 +74,27 @@ body {
     color: var(--text-primary);
 }
 
+.header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#language-selector {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.4rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#language-selector:hover {
+    background-color: var(--code-bg);
+}
+
 #theme-toggle {
     background: none;
     border: none;

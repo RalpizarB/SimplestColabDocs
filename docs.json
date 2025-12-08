@@ -1,32 +1,20 @@
 {
-    "Document.md": {
-        "path": "docs/Document.md",
-        "date": "2025-12-05"
-    },
-    "Linking.md": {
-        "path": "docs/Linking.md",
-        "date": "2025-12-05"
-    },
-    "Test.md": {
-        "path": "docs/Test.md",
-        "date": "2025-12-05"
-    },
-    "Getting Started": {
-        "Welcome.md": {
-            "path": "docs/Getting Started/Welcome.md",
-            "date": "2025-12-05"
-        }
-    },
-    "Advanced": {
-        "SubfolderTest.md": {
-            "path": "docs/Advanced/SubfolderTest.md",
-            "date": "2025-12-05"
+    "Tutorial": {
+        "IntelliJ y Git.md": {
+            "path": "docs/Tutorial/IntelliJ y Git.md",
+            "date": "2025-12-08"
         },
-        "Deep": {
-            "DeepLink.md": {
-                "path": "docs/Advanced/Deep/DeepLink.md",
-                "date": "2025-12-05"
-            }
+        "Gu\u00eda de Uso.md": {
+            "path": "docs/Tutorial/Gu\u00eda de Uso.md",
+            "date": "2025-12-08"
+        },
+        "Primeros Pasos.md": {
+            "path": "docs/Tutorial/Primeros Pasos.md",
+            "date": "2025-12-08"
+        },
+        "Maven en IntelliJ.md": {
+            "path": "docs/Tutorial/Maven en IntelliJ.md",
+            "date": "2025-12-08"
         }
     }
 }
