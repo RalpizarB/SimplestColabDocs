@@ -380,16 +380,27 @@ async function loadDocsFromStructure(structure) {
 function parseMarkdown(markdown, currentPath = '') {
     let html = markdown;
     
-    // Escape HTML to prevent XSS
-    html = escapeHtml(html);
+    // Store code blocks and inline code temporarily to prevent markdown parsing inside them
+    const codeBlocks = [];
+    const inlineCodes = [];
     
-    // Code blocks (must be first to prevent other parsing inside)
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-        return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+    // Extract code blocks first (before HTML escaping to preserve original content)
+    // Make newline optional to handle edge cases
+    html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+        const index = codeBlocks.length;
+        codeBlocks.push({ lang, code: code.trim() });
+        return `CODEBLOCKPLACEHOLDER${index}ENDPLACEHOLDER`;
     });
     
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Extract inline code (before HTML escaping to preserve original content)
+    html = html.replace(/`([^`]+)`/g, (match, code) => {
+        const index = inlineCodes.length;
+        inlineCodes.push(code);
+        return `INLINECODEPLACEHOLDER${index}ENDPLACEHOLDER`;
+    });
+    
+    // Escape HTML to prevent XSS (after extracting code)
+    html = escapeHtml(html);
     
     // Headers
     html = html.replace(/^###### (.+)$/gm, '<h6>$1</h6>');
@@ -460,12 +471,25 @@ function parseMarkdown(markdown, currentPath = '') {
         const trimmed = line.trim();
         if (trimmed === '') return '';
         if (trimmed.startsWith('<')) return line;
+        // Don't wrap code placeholders in paragraphs (check with startsWith for efficiency)
+        if (trimmed.startsWith('CODEBLOCKPLACEHOLDER')) return line;
         return `<p>${line}</p>`;
     }).join('\n');
     
     // Clean up empty paragraphs
     html = html.replace(/<p><\/p>/g, '');
     html = html.replace(/<p>\s*<\/p>/g, '');
+    
+    // Restore all placeholders in a single pass using regex
+    html = html.replace(/INLINECODEPLACEHOLDER(\d+)ENDPLACEHOLDER/g, (match, index) => {
+        const code = inlineCodes[parseInt(index, 10)];
+        return `<code>${escapeHtml(code)}</code>`;
+    });
+    
+    html = html.replace(/CODEBLOCKPLACEHOLDER(\d+)ENDPLACEHOLDER/g, (match, index) => {
+        const block = codeBlocks[parseInt(index, 10)];
+        return `<pre><code class="language-${block.lang}">${escapeHtml(block.code)}</code></pre>`;
+    });
     
     return html;
 }

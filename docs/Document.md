@@ -37,6 +37,29 @@ function sayHello(name) {
 sayHello("SimplestColabDocs");
 ```
 
+### Markdown Examples in Code Blocks
+
+You can show markdown syntax examples without them being parsed:
+
+```markdown
+# This is a heading
+## This is a subheading
+
+**Bold text** and *italic text*
+
+- List item 1
+- List item 2
+
+[Link text](https://example.com)
+![Image alt](image.png)
+
+> This is a blockquote
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+```
+
 ### Lists
 
 Unordered list:
