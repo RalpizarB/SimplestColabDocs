@@ -3,6 +3,99 @@
  * No external libraries - Pure JavaScript
  */
 
+// Internationalization
+const i18n = {
+    es: {
+        'search-placeholder': 'Buscar documentos...',
+        'tab-documents': 'Documentos',
+        'tab-all-articles': 'Todos los Artículos',
+        'tab-recently-read': 'Leídos Recientemente',
+        'welcome-title': 'Bienvenido a SimplestColabDocs',
+        'welcome-subtitle': 'Selecciona un documento de la barra lateral para comenzar.',
+        'welcome-intro': 'Esta es una herramienta simple de documentación colaborativa con:',
+        'feature-1': 'Sin librerías externas de JavaScript',
+        'feature-2': 'Estructura de navegación en árbol',
+        'feature-3': 'Soporte de Markdown (imágenes, bloques de código, tablas)',
+        'feature-4': 'Tema claro y oscuro',
+        'feature-5': 'Búsqueda de texto completo',
+        'no-articles': 'No se encontraron artículos.',
+        'no-recently-read': 'No hay documentos leídos recientemente.',
+        'search-results-title': 'Resultados de Búsqueda',
+        'no-results': 'No se encontraron resultados para',
+        'found-matches': 'Se encontraron',
+        'matches-in': 'coincidencias en',
+        'documents-for': 'documento(s) para',
+        'line': 'Línea',
+        'just-now': 'Justo ahora',
+        'min-ago': 'min atrás',
+        'hours-ago': 'horas atrás',
+        'days-ago': 'días atrás'
+    },
+    en: {
+        'search-placeholder': 'Search docs...',
+        'tab-documents': 'Documents',
+        'tab-all-articles': 'All Articles',
+        'tab-recently-read': 'Recently Read',
+        'welcome-title': 'Welcome to SimplestColabDocs',
+        'welcome-subtitle': 'Select a document from the sidebar to get started.',
+        'welcome-intro': 'This is a simple documentation collaboration tool with:',
+        'feature-1': 'No external JavaScript libraries',
+        'feature-2': 'Tree-like navigation structure',
+        'feature-3': 'Markdown support (images, code blocks, tables)',
+        'feature-4': 'Light and Dark theme',
+        'feature-5': 'Full-text search',
+        'no-articles': 'No articles found.',
+        'no-recently-read': 'No recently read documents.',
+        'search-results-title': 'Search Results',
+        'no-results': 'No results found for',
+        'found-matches': 'Found',
+        'matches-in': 'matches in',
+        'documents-for': 'document(s) for',
+        'line': 'Line',
+        'just-now': 'Just now',
+        'min-ago': 'min ago',
+        'hours-ago': 'hours ago',
+        'days-ago': 'days ago'
+    }
+};
+
+let currentLanguage = 'es'; // Default language is Spanish
+
+function t(key) {
+    return i18n[currentLanguage][key] || i18n['en'][key] || key;
+}
+
+function updateLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+    document.documentElement.lang = lang;
+    
+    // Update all elements with data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        element.textContent = t(key);
+    });
+    
+    // Update search placeholder
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.placeholder = t('search-placeholder');
+    }
+    
+    // Update language selector
+    const languageSelector = document.getElementById('language-selector');
+    if (languageSelector) {
+        languageSelector.value = lang;
+    }
+    
+    // Refresh current tab content if needed
+    if (currentTab === 'recent') {
+        displayRecentArticles();
+    } else if (currentTab === 'history') {
+        displayRecentlyRead();
+    }
+}
+
 // Configuration constants
 const SEARCH_CONTEXT_CHARS = 40;
 const MAX_MATCHES_PER_DOCUMENT = 5;
@@ -21,9 +114,14 @@ let currentTab = 'docs';
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Initialize language first
+        const savedLanguage = localStorage.getItem('language') || 'es';
+        updateLanguage(savedLanguage);
+        
         initTheme();
         initTabs();
         initSearch();
+        initLanguageSelector();
         
         // Load document structure from docs.json
         await loadDocsStructure();
@@ -200,6 +298,15 @@ function initTheme() {
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
         }
+    });
+}
+
+// Language Selector Management
+function initLanguageSelector() {
+    const languageSelector = document.getElementById('language-selector');
+    
+    languageSelector.addEventListener('change', (e) => {
+        updateLanguage(e.target.value);
     });
 }
 
@@ -625,8 +732,16 @@ function initSearch() {
             const contentEl = document.getElementById('doc-content');
             if (contentEl.querySelector('.search-results')) {
                 contentEl.innerHTML = `
-                    <h1>Welcome to SimplestColabDocs</h1>
-                    <p>Select a document from the sidebar to get started.</p>
+                    <h1 data-i18n="welcome-title">${t('welcome-title')}</h1>
+                    <p data-i18n="welcome-subtitle">${t('welcome-subtitle')}</p>
+                    <p data-i18n="welcome-intro">${t('welcome-intro')}</p>
+                    <ul>
+                        <li data-i18n="feature-1">${t('feature-1')}</li>
+                        <li data-i18n="feature-2">${t('feature-2')}</li>
+                        <li data-i18n="feature-3">${t('feature-3')}</li>
+                        <li data-i18n="feature-4">${t('feature-4')}</li>
+                        <li data-i18n="feature-5">${t('feature-5')}</li>
+                    </ul>
                 `;
             }
             return;
@@ -725,8 +840,8 @@ function displaySearchResults(results, query) {
     if (results.length === 0) {
         contentEl.innerHTML = `
             <div class="search-results">
-                <h1>Search Results</h1>
-                <p class="no-results">No results found for "<strong>${escapeHtml(query)}</strong>"</p>
+                <h1>${t('search-results-title')}</h1>
+                <p class="no-results">${t('no-results')} "<strong>${escapeHtml(query)}</strong>"</p>
             </div>
         `;
         return;
@@ -734,8 +849,8 @@ function displaySearchResults(results, query) {
     
     let html = `
         <div class="search-results">
-            <h1>Search Results</h1>
-            <p class="results-count">Found ${results.reduce((sum, r) => sum + r.matches.length, 0)} matches in ${results.length} document(s) for "<strong>${escapeHtml(query)}</strong>"</p>
+            <h1>${t('search-results-title')}</h1>
+            <p class="results-count">${t('found-matches')} ${results.reduce((sum, r) => sum + r.matches.length, 0)} ${t('matches-in')} ${results.length} ${t('documents-for')} "<strong>${escapeHtml(query)}</strong>"</p>
     `;
     
     for (const result of results) {
@@ -751,7 +866,7 @@ function displaySearchResults(results, query) {
             const highlightedContext = highlightInContext(match.context, query);
             html += `
                 <div class="result-match">
-                    <span class="line-number">Line ${match.lineNumber}:</span>
+                    <span class="line-number">${t('line')} ${match.lineNumber}:</span>
                     <span class="match-context">${highlightedContext}</span>
                 </div>
             `;
@@ -796,7 +911,7 @@ function displayRecentArticles() {
     const articles = getAllDocPaths();
     
     if (articles.length === 0) {
-        container.innerHTML = '<p class="tab-empty">No articles found.</p>';
+        container.innerHTML = `<p class="tab-empty">${t('no-articles')}</p>`;
         return;
     }
     
@@ -891,7 +1006,7 @@ function displayRecentlyRead() {
     const recentlyRead = getRecentlyRead();
     
     if (recentlyRead.length === 0) {
-        container.innerHTML = '<p class="tab-empty">No recently read documents.</p>';
+        container.innerHTML = `<p class="tab-empty">${t('no-recently-read')}</p>`;
         return;
     }
     
@@ -935,10 +1050,10 @@ function displayRecentlyRead() {
 function getTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return Math.floor(seconds / 60) + ' min ago';
-    if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
-    if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+    if (seconds < 60) return t('just-now');
+    if (seconds < 3600) return Math.floor(seconds / 60) + ' ' + t('min-ago');
+    if (seconds < 86400) return Math.floor(seconds / 3600) + ' ' + t('hours-ago');
+    if (seconds < 604800) return Math.floor(seconds / 86400) + ' ' + t('days-ago');
     
     return new Date(timestamp).toLocaleDateString();
 }
