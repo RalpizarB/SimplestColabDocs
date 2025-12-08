@@ -21,31 +21,17 @@ Usa la barra de búsqueda en la parte superior para encontrar texto en todos los
 
 ### Enlaces Internos
 
-Puedes enlazar a otros documentos:
-
-```markdown
-[Texto del enlace](ruta/al/documento.md)
-```
+Puedes enlazar a otros documentos usando la sintaxis estándar de Markdown: `[Texto del enlace](ruta/al/documento.md)`
 
 Ejemplo: Enlaces relativos funcionan desde cualquier profundidad de carpeta.
 
 ### Imágenes
 
-Para incluir imágenes:
-
-```markdown
-![Texto alternativo](ruta/a/imagen.png)
-```
+Para incluir imágenes, usa: `![Texto alternativo](ruta/a/imagen.png)`
 
 ### Bloques de Código
 
-Usa triple acento grave para bloques de código:
-
-\`\`\`javascript
-function ejemplo() {
-    console.log("Hola mundo");
-}
-\`\`\`
+Usa tres acentos graves seguidos del lenguaje para crear bloques de código con resaltado de sintaxis.
 
 ### Tablas
 
@@ -68,14 +54,14 @@ Haz clic en el botón de alternar tema (sol/luna) en la esquina superior derecha
 
 ### Estructura de Carpetas
 
-```
-docs/
-├── tutorial/
-│   ├── GettingStarted.md
-│   └── UsageGuide.md
-└── tu-categoria/
-    └── tu-documento.md
-```
+Ejemplo de estructura:
+
+    docs/
+    ├── tutorial/
+    │   ├── Primeros Pasos.md
+    │   └── Guía de Uso.md
+    └── tu-categoria/
+        └── tu-documento.md
 
 El archivo `docs.json` se genera automáticamente cuando haces push.
 
@@ -104,31 +90,17 @@ Use the search bar at the top to find text across all documents. Results show:
 
 ### Internal Links
 
-You can link to other documents:
-
-```markdown
-[Link text](path/to/document.md)
-```
+You can link to other documents using standard Markdown syntax: `[Link text](path/to/document.md)`
 
 Example: Relative links work from any folder depth.
 
 ### Images
 
-To include images:
-
-```markdown
-![Alt text](path/to/image.png)
-```
+To include images, use: `![Alt text](path/to/image.png)`
 
 ### Code Blocks
 
-Use triple backticks for code blocks:
-
-\`\`\`javascript
-function example() {
-    console.log("Hello world");
-}
-\`\`\`
+Use three backticks followed by the language name to create code blocks with syntax highlighting.
 
 ### Tables
 
@@ -151,13 +123,13 @@ Click the theme toggle button (sun/moon) in the top right corner to switch betwe
 
 ### Folder Structure
 
-```
-docs/
-├── tutorial/
-│   ├── GettingStarted.md
-│   └── UsageGuide.md
-└── your-category/
-    └── your-document.md
-```
+Example structure:
+
+    docs/
+    ├── tutorial/
+    │   ├── Primeros Pasos.md
+    │   └── Guía de Uso.md
+    └── your-category/
+        └── your-document.md
 
 The `docs.json` file is automatically generated when you push.
