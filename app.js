@@ -490,6 +490,13 @@ async function loadDocsFromStructure(structure) {
 function parseMarkdown(markdown, currentPath = '') {
     let html = markdown;
     
+    // Extract reference-style links and images (e.g., [id]: <url> or [id]: url)
+    const references = {};
+    html = html.replace(/^\[([^\]]+)\]:\s*<?([^>\s]+)>?(?:\s+["']([^"']*)["'])?\s*$/gm, (match, id, url, title) => {
+        references[id.toLowerCase()] = { url, title: title || '' };
+        return ''; // Remove the reference definition from the content
+    });
+    
     // Store code blocks and inline code temporarily to prevent markdown parsing inside them
     const codeBlocks = [];
     const inlineCodes = [];
@@ -534,8 +541,13 @@ function parseMarkdown(markdown, currentPath = '') {
     // Get current directory for relative paths
     const currentDir = currentPath ? currentPath.substring(0, currentPath.lastIndexOf('/') + 1) : '';
     
-    // Images - handle relative paths
+    // Images - handle inline, reference-style, relative paths and base64 images
+    // First handle inline images: ![alt](src)
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
+        // If it's a data URI (base64 image), use it directly
+        if (src.startsWith('data:image/')) {
+            return `<img src="${src}" alt="${alt}">`;
+        }
         // If it's a relative path (not http/https), resolve it
         if (!src.startsWith('http://') && !src.startsWith('https://')) {
             src = resolvePath(currentDir, src);
@@ -543,7 +555,26 @@ function parseMarkdown(markdown, currentPath = '') {
         return `<img src="${src}" alt="${alt}">`;
     });
     
-    // Links - handle internal .md links
+    // Then handle reference-style images: ![alt][ref]
+    html = html.replace(/!\[([^\]]*)\]\[([^\]]+)\]/g, (match, alt, refId) => {
+        const ref = references[refId.toLowerCase()];
+        if (ref) {
+            let src = ref.url;
+            // If it's a data URI (base64 image), use it directly
+            if (src.startsWith('data:image/')) {
+                return `<img src="${src}" alt="${alt}">`;
+            }
+            // If it's a relative path (not http/https), resolve it
+            if (!src.startsWith('http://') && !src.startsWith('https://')) {
+                src = resolvePath(currentDir, src);
+            }
+            return `<img src="${src}" alt="${alt}">`;
+        }
+        return match; // If reference not found, leave unchanged
+    });
+    
+    // Links - handle inline and reference-style links
+    // First handle inline links: [text](href)
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, href) => {
         // Check if it's an internal markdown link
         if (href.endsWith('.md')) {
@@ -552,6 +583,22 @@ function parseMarkdown(markdown, currentPath = '') {
         }
         // External link
         return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+    });
+    
+    // Then handle reference-style links: [text][ref]
+    html = html.replace(/\[([^\]]+)\]\[([^\]]+)\]/g, (match, text, refId) => {
+        const ref = references[refId.toLowerCase()];
+        if (ref) {
+            const href = ref.url;
+            // Check if it's an internal markdown link
+            if (href.endsWith('.md')) {
+                const resolvedPath = resolvePath(currentDir, href);
+                return `<a href="${resolvedPath}" data-internal="true">${text}</a>`;
+            }
+            // External link
+            return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+        }
+        return match; // If reference not found, leave unchanged
     });
     
     // Blockquotes
