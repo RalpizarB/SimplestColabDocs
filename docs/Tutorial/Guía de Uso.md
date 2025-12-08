@@ -6,9 +6,9 @@
 
 La barra lateral tiene tres pestañas:
 
-1. **Documents**: Navegación en árbol de todos los documentos organizados por carpetas
-2. **All Articles**: Lista de todos los artículos ordenados por fecha (más reciente primero)
-3. **Recently Read**: Historial de documentos que has leído recientemente
+1. **Documentos**: Navegación en árbol de todos los documentos organizados por carpetas
+2. **Todos los articulos**: Lista de todos los artículos ordenados por fecha (más reciente primero)
+3. **Recien leído**: Historial de documentos que has leído recientemente
 
 ### Búsqueda
 
