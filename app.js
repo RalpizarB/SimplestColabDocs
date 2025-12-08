@@ -3,6 +3,9 @@
  * No external libraries - Pure JavaScript
  */
 
+// Configuration constants
+const DEFAULT_LANGUAGE = 'es'; // Spanish as default
+
 // Internationalization
 const i18n = {
     es: {
@@ -59,7 +62,7 @@ const i18n = {
     }
 };
 
-let currentLanguage = 'es'; // Default language is Spanish
+let currentLanguage = DEFAULT_LANGUAGE;
 
 function t(key) {
     return i18n[currentLanguage][key] || i18n['en'][key] || key;
@@ -115,7 +118,7 @@ let currentTab = 'docs';
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Initialize language first
-        const savedLanguage = localStorage.getItem('language') || 'es';
+        const savedLanguage = localStorage.getItem('language') || DEFAULT_LANGUAGE;
         updateLanguage(savedLanguage);
         
         initTheme();
