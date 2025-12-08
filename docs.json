@@ -1,11 +1,11 @@
 {
     "tutorial": {
-        "Primeros Pasos.md": {
-            "path": "docs/tutorial/Primeros Pasos.md",
+        "Gu\u00eda de Uso.md": {
+            "path": "docs/tutorial/Gu\u00eda de Uso.md",
             "date": "2025-12-08"
         },
-        "Guía de Uso.md": {
-            "path": "docs/tutorial/Guía de Uso.md",
+        "Primeros Pasos.md": {
+            "path": "docs/tutorial/Primeros Pasos.md",
             "date": "2025-12-08"
         }
     }
