@@ -1,0 +1,32 @@
+{
+    "Document.md": {
+        "path": "docs/Document.md",
+        "date": "2025-12-05"
+    },
+    "Linking.md": {
+        "path": "docs/Linking.md",
+        "date": "2025-12-05"
+    },
+    "Test.md": {
+        "path": "docs/Test.md",
+        "date": "2025-12-05"
+    },
+    "Getting Started": {
+        "Welcome.md": {
+            "path": "docs/Getting Started/Welcome.md",
+            "date": "2025-12-05"
+        }
+    },
+    "Advanced": {
+        "SubfolderTest.md": {
+            "path": "docs/Advanced/SubfolderTest.md",
+            "date": "2025-12-05"
+        },
+        "Deep": {
+            "DeepLink.md": {
+                "path": "docs/Advanced/Deep/DeepLink.md",
+                "date": "2025-12-05"
+            }
+        }
+    }
+}

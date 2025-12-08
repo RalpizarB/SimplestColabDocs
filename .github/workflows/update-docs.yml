@@ -1,0 +1,107 @@
+name: Update docs.json
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git log dates
+
+      - name: Generate docs.json
+        run: |
+          #!/bin/bash
+          
+          # Generate docs.json using Python script
+          python3 << 'EOF'
+          import os
+          import json
+          import subprocess
+          from datetime import datetime
+          
+          DEFAULT_DATE = "2025-12-01"
+          
+          def get_file_date(filepath):
+              """Get the date the file was first added to git"""
+              try:
+                  result = subprocess.run(
+                      ['git', 'log', '--follow', '--format=%aI', '--diff-filter=A', '--', filepath],
+                      capture_output=True, text=True, check=True
+                  )
+                  dates = result.stdout.strip().split('\n')
+                  if dates and dates[-1]:
+                      return dates[-1].split('T')[0]
+              except:
+                  pass
+              return DEFAULT_DATE
+          
+          def build_structure(docs_dir):
+              """Build the document structure with dates"""
+              structure = {}
+              all_docs = []
+              
+              for root, dirs, files in os.walk(docs_dir):
+                  for filename in files:
+                      if filename.endswith('.md'):
+                          filepath = os.path.join(root, filename)
+                          rel_path = os.path.relpath(filepath, docs_dir)
+                          date_added = get_file_date(filepath)
+                          
+                          # Determine the path parts
+                          parts = rel_path.split(os.sep)
+                          
+                          all_docs.append({
+                              'path': filepath,
+                              'filename': filename,
+                              'parts': parts,
+                              'date': date_added
+                          })
+              
+              # Sort by date (most recent first)
+              all_docs.sort(key=lambda x: x['date'], reverse=True)
+              
+              # Build nested structure
+              for doc in all_docs:
+                  parts = doc['parts']
+                  current = structure
+                  
+                  # Navigate/create the nested structure
+                  for i, part in enumerate(parts[:-1]):
+                      if part not in current:
+                          current[part] = {}
+                      current = current[part]
+                  
+                  # Add the file with its date
+                  filename = parts[-1]
+                  current[filename] = {
+                      'path': doc['path'],
+                      'date': doc['date']
+                  }
+              
+              return structure
+          
+          if __name__ == '__main__':
+              structure = build_structure('docs')
+              
+              with open('docs.json', 'w') as f:
+                  json.dump(structure, f, indent=4)
+              
+              print("Generated docs.json:")
+              print(json.dumps(structure, indent=4))
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs.json
+          git diff --staged --quiet || git commit -m "Auto-update docs.json with document dates"
+          git push

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplestColabDocs</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Docs</h1>
+                <button id="theme-toggle" aria-label="Toggle theme">
+                    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search docs...">
+            </div>
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-tab="docs">Documents</button>
+                <button class="sidebar-tab" data-tab="recent">All Articles</button>
+                <button class="sidebar-tab" data-tab="history">Recently Read</button>
+            </div>
+            <div class="tab-content" id="tab-docs">
+                <nav id="doc-tree" class="doc-tree">
+                    <!-- Tree structure will be populated by JavaScript -->
+                </nav>
+            </div>
+            <div class="tab-content hidden" id="tab-recent">
+                <!-- All articles will be populated by JavaScript -->
+            </div>
+            <div class="tab-content hidden" id="tab-history">
+                <!-- Recently read will be populated by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <article id="doc-content">
+                <h1>Welcome to SimplestColabDocs</h1>
+                <p>Select a document from the sidebar to get started.</p>
+                <p>This is a simple documentation collaboration tool with:</p>
+                <ul>
+                    <li>No external JavaScript libraries</li>
+                    <li>Tree-like navigation structure</li>
+                    <li>Markdown support (images, code blocks, tables)</li>
+                    <li>Light and Dark theme</li>
+                    <li>Full-text search</li>
+                </ul>
+            </article>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 SimplestColabDocs. All rights reserved.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
